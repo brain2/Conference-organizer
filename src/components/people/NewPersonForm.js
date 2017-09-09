@@ -26,7 +26,7 @@ const validate = ({firstName, lastName, email}) => {
   else if (!emailValidator.validate(email)) errors.email = 'Invalid email';
   
   if (!firstName) errors.firstName = 'Firstname is required';
-  if (!lastName) errors.lastName = 'Lastname is required';
+  //if (!lastName) errors.lastName = 'Lastname is required';
   
   return errors;
 };
