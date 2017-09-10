@@ -2,7 +2,8 @@ import firebase from 'firebase';
 import {appName} from '../config';
 import {Record} from 'immutable';
 //import store from '../redux';
-import {all, call, put, take} from 'redux-saga/effects';
+import {all, call, cps, put, take, takeEvery} from 'redux-saga/effects';
+import {push} from 'react-router-redux';
 
 const ReducerRecord = Record({ // schema
   user: null,
@@ -15,6 +16,8 @@ export const SIGN_UP_REQUEST = `${appName}/${moduleName}/SIGN_UP_REQUEST`;
 export const SIGN_UP_SUCCESS = `${appName}/${moduleName}/SIGN_UP_SUCCESS`;
 export const SIGN_UP_ERROR = `${appName}/${moduleName}/SIGN_UP_ERROR`;
 export const SIGN_IN_SUCCESS = `${appName}/${moduleName}/SIGN_IN_SUCCESS`;
+export const SIGN_OUT_REQUEST = `${appName}/${moduleName}/SIGN_OUT_REQUEST`;
+export const SIGN_OUT_SUCCESS = `${appName}/${moduleName}/SIGN_OUT_SUCCESS`;
 
 export default function reducer(state = new ReducerRecord(), action) {
    const {type, payload, error} = action;
@@ -34,6 +37,9 @@ export default function reducer(state = new ReducerRecord(), action) {
          .set('loading', false)
          .set('error', error);
        
+     case SIGN_OUT_SUCCESS:
+       return new ReducerRecord();
+       
      default:
        return state;
    }
@@ -47,10 +53,10 @@ export function signUp(email, password) {
 }
 
 export const signUpSaga = function * () {
-  const action = yield take(SIGN_UP_REQUEST);
+  const auth = firebase.auth();
   
   while (true) {
-    const auth = firebase.auth();
+    const action = yield take(SIGN_UP_REQUEST);
   
     try {
       const user = yield call( // if this promise resolve, redux-saga will write its value in const user
@@ -59,7 +65,7 @@ export const signUpSaga = function * () {
       );
     
       yield put({
-        type:SIGN_IN_SUCCESS,
+        type:SIGN_UP_SUCCESS,
         payload: {user}
       })
     } catch (error) {
@@ -89,11 +95,11 @@ export const signUpSaga = function * () {
   }
 }*/
 
-export const watchStateChange = function * () {
+export const watchStatusChange = function * () {
   const auth = firebase.auth();
-  
+  console.log('111111111111');
   try {
-    yield call([auth, auth.onAuthStateChanged]);
+    yield cps([auth, auth.onAuthStateChanged]);
     
   } catch (user) {
     yield put({
@@ -110,9 +116,28 @@ export const watchStateChange = function * () {
   })
 });*/
 
+export function signOut() {
+  return {
+    type: SIGN_OUT_REQUEST
+  }
+}
+
+export const signOutSaga = function * () {
+  const auth = firebase.auth();
+  
+  try {
+    yield call([auth, auth.signOut]);
+    yield put({
+      type: SIGN_OUT_SUCCESS
+    });
+    yield put(push('/auth/signin'));
+  } catch (_) {}
+};
+
 export const saga = function * () {
   yield all([
     signUpSaga(),
-    watchStateChange()
+    watchStatusChange(),
+    takeEvery(SIGN_OUT_REQUEST, signOutSaga)
   ])
 };

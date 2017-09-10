@@ -28,4 +28,4 @@ class AuthPage extends Component {
 
 export default connect(state => ({
   loading: state[moduleName].loading
-}), {signUp})(AuthPage);
+}), {signUp}, null, {pure: false})(AuthPage);
