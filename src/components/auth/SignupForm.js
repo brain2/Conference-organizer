@@ -30,12 +30,13 @@ const validate = ({email, password}) => {
   else if (!emailValidator.validate(email)) errors.email = 'Invalid email';
   
   if (!password) errors.password = 'password is required';
-  else if (password.length < 8) errors.password = 'too short';
+  else if (password.length < 2) errors.password = 'too short';
   
   return errors;
 };
 
 export default reduxForm({
   form: 'auth',
-  validate
+  validate,
+  pure: false
 })(SignUpForm);

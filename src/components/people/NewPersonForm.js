@@ -32,6 +32,6 @@ const validate = ({firstName, lastName, email}) => {
 };
 
 export default reduxForm({
-  form: 'people',
+  form: 'person',
   validate
 })(NewPersonForm);

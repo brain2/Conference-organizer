@@ -5,7 +5,7 @@ import {Record} from 'immutable';
 import {all, call, cps, put, take, takeEvery} from 'redux-saga/effects';
 import {push} from 'react-router-redux';
 
-const ReducerRecord = Record({ // schema
+export const ReducerRecord = Record({ // schema
   user: null,
   error: null,
   loading: false
@@ -15,7 +15,9 @@ export const moduleName = 'auth';
 export const SIGN_UP_REQUEST = `${appName}/${moduleName}/SIGN_UP_REQUEST`;
 export const SIGN_UP_SUCCESS = `${appName}/${moduleName}/SIGN_UP_SUCCESS`;
 export const SIGN_UP_ERROR = `${appName}/${moduleName}/SIGN_UP_ERROR`;
+export const SIGN_IN_REQUEST = `${appName}/${moduleName}/SIGN_IN_REQUEST`;
 export const SIGN_IN_SUCCESS = `${appName}/${moduleName}/SIGN_IN_SUCCESS`;
+export const SIGN_IN_ERROR = `${appName}/${moduleName}/SIGN_IN_ERROR`;
 export const SIGN_OUT_REQUEST = `${appName}/${moduleName}/SIGN_OUT_REQUEST`;
 export const SIGN_OUT_SUCCESS = `${appName}/${moduleName}/SIGN_OUT_SUCCESS`;
 
@@ -23,6 +25,7 @@ export default function reducer(state = new ReducerRecord(), action) {
    const {type, payload, error} = action;
    
    switch (type) {
+     case SIGN_IN_REQUEST:
      case SIGN_UP_REQUEST:
        return state.set('loading', true);
        
@@ -32,6 +35,7 @@ export default function reducer(state = new ReducerRecord(), action) {
          .set('user', payload.user)
          .set('error', null);
        
+     case SIGN_IN_ERROR:
      case SIGN_UP_ERROR:
        return state
          .set('loading', false)
@@ -97,7 +101,7 @@ export const signUpSaga = function * () {
 
 export const watchStatusChange = function * () {
   const auth = firebase.auth();
-  console.log('111111111111');
+  
   try {
     yield cps([auth, auth.onAuthStateChanged]);
     
@@ -134,9 +138,41 @@ export const signOutSaga = function * () {
   } catch (_) {}
 };
 
+export function signIn(email, password) {
+  return {
+    type: SIGN_IN_REQUEST,
+    payload: {email, password}
+  }
+}
+
+export const signInSaga = function* () {
+  const auth = firebase.auth();
+  
+  while (true) {
+    const action = yield take(SIGN_IN_REQUEST);
+  
+    try {
+      const user = yield call(
+        [auth, auth.signInWithEmailAndPassword],
+        action.payload.email, action.payload.password);
+    
+      yield put({
+        type: SIGN_IN_SUCCESS,
+        payload: {user}
+      })
+    } catch (error) {
+      yield put({
+        type: SIGN_IN_ERROR,
+        error
+      })
+    }
+  }
+};
+
 export const saga = function * () {
   yield all([
     signUpSaga(),
+    signInSaga(),
     watchStatusChange(),
     takeEvery(SIGN_OUT_REQUEST, signOutSaga)
   ])
