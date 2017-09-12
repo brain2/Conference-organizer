@@ -103,9 +103,10 @@ export const watchStatusChange = function * () {
   const auth = firebase.auth();
   
   try {
-    yield cps([auth, auth.onAuthStateChanged]);
-    
+    const i = yield cps([auth, auth.onAuthStateChanged]);
+    console.log('--', 'BeginWatchStatusChange', i);
   } catch (user) {
+    console.log('--', 'EndWatchStatusChange');
     yield put({
       type: SIGN_IN_SUCCESS,
       payload: {user}
