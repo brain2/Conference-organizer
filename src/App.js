@@ -6,6 +6,7 @@ import history from './history';
 
 import Root from './components/Root';
 import './config';
+import './mocks';
 
 class App extends Component {
   render() {
