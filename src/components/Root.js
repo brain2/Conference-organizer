@@ -3,7 +3,7 @@ import {Route, Link} from 'react-router-dom';
 import AdminPage from './routes/AdminPage';
 import AuthPage from './routes/AuthPage';
 import ProtectedRoute from './common/ProtectedRoute';
-import PersonPage from './routes/PersonPage';
+import PersonPage from './routes/PeoplePage';
 import EventsPage from './routes/EventsPage';
 import {connect} from 'react-redux';
 import {moduleName, signOut} from '../ducks/auth';
