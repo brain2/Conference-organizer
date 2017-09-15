@@ -8,6 +8,7 @@ import EventsPage from './routes/EventsPage';
 import {connect} from 'react-redux';
 import {moduleName, signOut} from '../ducks/auth';
 
+
 class Root extends Component {
   render() {
     const {signedIn, signOut} = this.props;
