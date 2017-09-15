@@ -7,7 +7,7 @@ import eventsReducer, {moduleName as eventsModule} from '../ducks/events';
 
 export default combineReducers({
   router,
-  form: form.plugin({
+  form: form.plugin({ // вариант очистки формы из доки
     [authModule]: (state, action) => {
       switch (action.type) {
         case SIGN_IN_SUCCESS: return undefined;
