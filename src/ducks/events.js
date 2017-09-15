@@ -84,6 +84,11 @@ export const eventListSelector = createSelector(entitiesSelector, entities => (
   entities.valueSeq().toArray() // в обычный массив, чтобы не заморачиваться с immutable.js структурами
 ));
 
+export const sectionSelector = createSelector(stateSelector, state => state.selected);
+export const selectedEventsSelector = createSelector(entitiesSelector, sectionSelector,
+  (entities, selection) => selection.toArray().map(uid => entities.get(uid))
+);
+
 /**
  * Action Creators
  * */
