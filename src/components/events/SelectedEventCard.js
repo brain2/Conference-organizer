@@ -1,11 +1,17 @@
 import React, {Component} from 'react';
-import {DropTarget} from 'react-dnd';
+import {DropTarget, DragSource} from 'react-dnd';
 import {connect} from 'react-redux';
-import {addEventToPerson, peopleListSelector} from '../../ducks/people';
+import {addEventToPerson, peopleListSelector, removeEventFromPeople} from '../../ducks/people';
+import {selectEvent} from '../../ducks/events';
+import {getEmptyImage} from 'react-dnd-html5-backend';
 
 class EventCard extends Component {
+  componentDidMount() {
+    this.props.connectPreview(getEmptyImage());
+  }
+  
   render() {
-    const {connectDropTarget, hovered, canDrop, people} = this.props;
+    const {connectDropTarget, hovered, canDrop, people, connectDragSource} = this.props;
     const {title, where, when} = this.props.event;
     
     const dropStyle = { // стилизация чтобы следить за состоянием перетаскивания
@@ -19,13 +25,13 @@ class EventCard extends Component {
       </p>
     );
     
-    return connectDropTarget(
+    return connectDropTarget(connectDragSource(
       <div style={dropStyle}>
         <h3>{title}</h3>
         <p>{where}, {when}</p>
         {peopleElement}
       </div>
-    )
+    ))
   }
 }
 
@@ -47,8 +53,33 @@ const collect = (connect, monitor) => ({
   hovered: monitor.isOver()
 });
 
+const specDrag = {
+  beginDrag(props) {
+    return {
+      uid: props.event.uid
+    }
+  },
+  
+  endDrag(props, monitor) {
+    const dropResult = monitor.getDropResult();
+    const eventUid = dropResult && dropResult.eventUid;
+    
+    if (eventUid && props.people) {
+      props.people.forEach(person => props.removeEventFromPeople(eventUid, person.uid))
+    }
+    if (eventUid) props.selectEvent(eventUid);
+  }
+};
+
+const collectDrag = (connect, monitor) => ({
+  connectDragSource: connect.dragSource(),
+  connectPreview: connect.dragPreview()
+});
+
 export default connect((state, props) => ({
   people: peopleListSelector(state).filter(person => person.events.includes(props.event.uid))
-}), {addEventToPerson})(DropTarget(['person'], spec, collect)(EventCard));
+}), {addEventToPerson, removeEventFromPeople, selectEvent})
+(DropTarget(['person'], spec, collect)
+(DragSource('selectedEvent', specDrag, collectDrag)(EventCard)));
 // connect должен быть внешним декоратором, т.к. он передает props, которые должны быть доступны
 // в DropTarget.spec.drop
