@@ -1,6 +1,7 @@
 import {Record, OrderedMap} from 'immutable';
 import {appName} from '../config';
-import {put, call, takeEvery, all, select, } from 'redux-saga/effects';
+import {put, call, takeEvery, all, select, fork, spawn, cancel, cancelled, race} from 'redux-saga/effects';
+import {delay} from 'redux-saga';
 import {reset} from 'redux-form';
 //import {generateId} from './utils';
 import firebase from 'firebase';
@@ -211,7 +212,34 @@ export const removeEventFromPeopleSaga = function* (action) {
   }
 };
 
+export const backgroundSyncSaga = function* () {
+  try {  // блок try чтобы среагировать на отмену
+    while (true) {
+      yield call(fetchAllSaga);
+      yield delay(2000);
+      //throw new Error;
+    }
+  } finally {
+    if (yield cancelled()) {
+      console.log('---', 'canceled sync saga');
+    }
+  }
+};
+
+export const cancellableSync = function* () {
+  yield race({
+    sync: backgroundSyncSaga(),
+    delay: delay(6000)
+  });
+  
+  /*const task = yield fork(backgroundSyncSaga);
+  yield delay(6000);
+  yield cancel(task);*/
+};
+
 export const saga = function * () {
+  yield spawn(cancellableSync);
+  
   yield all([
     takeEvery(ADD_PERSON_REQUEST, addPersonSaga),
     takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
