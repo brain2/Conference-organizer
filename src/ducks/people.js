@@ -1,7 +1,7 @@
 import {Record, OrderedMap} from 'immutable';
 import {appName} from '../config';
-import {put, call, takeEvery, all, select, fork, spawn, cancel, cancelled, race} from 'redux-saga/effects';
-import {delay} from 'redux-saga';
+import {put, call, takeEvery, take, all, select, fork, spawn, cancel, cancelled, race} from 'redux-saga/effects';
+import {delay, eventChannel} from 'redux-saga';
 import {reset} from 'redux-form';
 //import {generateId} from './utils';
 import firebase from 'firebase';
@@ -228,13 +228,44 @@ export const backgroundSyncSaga = function* () {
 
 export const cancellableSync = function* () {
   yield race({
-    sync: backgroundSyncSaga(),
+    sync: realtimeSync(),
     delay: delay(6000)
   });
   
   /*const task = yield fork(backgroundSyncSaga);
   yield delay(6000);
   yield cancel(task);*/
+};
+
+const createPeopleSocket = () => eventChannel(emit => { //create Socket
+  const ref = firebase.database().ref('people');
+  const callback = (data) => emit({data});
+  ref.on('value', callback);
+  
+  return () => {      //pattern: возвращаю ф-цию, которая может потом отписаться (почистить за собой)
+    console.log('---', 'unsubscribing');
+    return ref.off('value', callback);
+  }
+});
+
+export const realtimeSync = function* () { // using opportunities of realtime DB
+  const channel = yield call(createPeopleSocket);
+  
+  try {
+    while (true) {
+      const { data } = yield take(channel);
+      console.log('---', data.val());
+      yield put({
+        type: FETCH_ALL_SUCCESS,
+        payload: data.val()
+      })
+    }
+  } finally {
+    //channel.close();                  // не тестируемо
+    yield call([channel, channel.close]); // тестируемо, отписываемся от Websocket, если не закрыть, то канал будет активный и можем его еще где-то переиспользовать
+    console.log('---', 'canceled sync saga');
+  }
+  
 };
 
 export const saga = function * () {
